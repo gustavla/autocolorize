@@ -34,7 +34,9 @@ args = dict(
     scripts=['scripts/autocolorize'],
     packages=[
         'autocolorize',
+        'autocolorize.res',
     ],
+    package_data={'res': ['res/autocolorize.prototxt']},
     license='BSD',
     classifiers=CLASSIFIERS,
 )

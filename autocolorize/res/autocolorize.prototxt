@@ -1,44 +1,4 @@
-name: "bare"
-
-#:define WEIGHTS             /share/data/vision-greg/larsson/DeepLab/init.caffemodel.h5
-#:define WEIGHTS             /share/data/vision-greg/larsson/DeepLab/vgg/vgg_7x7.caffemodel.h5
-#:define WEIGHTS /none
-#
-
-
-
-
-
-#:define TEST_SIZE           256
-#:define TEST_LOCATIONS      4225
-#:define TEST_LOCATIONS      16900
-#264196
-
-
-
-#:define TARGETS            [0.2]
-
-
-
-
-
-
-
-# Set to zero to freeze vgg
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+name: "autocolorize"
 
 input: "data"
 input_shape {
