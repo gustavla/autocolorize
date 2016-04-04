@@ -11,7 +11,7 @@ Automatically colorize images using Machine Learning.
 
 Installation
 ------------
-Make sure that you have Cython and Numpy installed, as well as Caffe (with Python bindings). Then run::
+Make sure that you have Caffe (with Python bindings). Then run::
 
     pip install autocolorize
 
