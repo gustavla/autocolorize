@@ -1,0 +1,4 @@
+include requirements.txt
+include requirements_docs.txt
+include res/autocolorize.prototxt
+recursive-include *.py
