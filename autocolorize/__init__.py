@@ -6,8 +6,8 @@ from . import image
 #from .checker import checker_main
 
 
-VERSION = (0, 1, 3)
-ISRELEASED = True
+VERSION = (0, 1, 4)
+ISRELEASED = False
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
