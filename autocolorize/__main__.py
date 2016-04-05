@@ -38,18 +38,27 @@ def main():
     import caffe
     parser = argparse.ArgumentParser()
     parser.add_argument('input', nargs='+', type=str, help='Input images')
-    parser.add_argument('-o', '--output', type=str, help='Output image or directory')
+    parser.add_argument('-o', '--output', type=str,
+                        help='Output image or directory')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-w', '--weights', type=str, help='Weights file')
-    parser.add_argument('-g', '--gpu', type=int)
+    parser.add_argument('-g', '--gpu', type=int),
+    parser.add_argument('-d', '--device', choices=['cpu', 'gpu'],
+                        default='gpu')
     parser.add_argument('-p', '--param', type=str)
     args = parser.parse_args()
 
     start = time.time()
 
+    if args.device == 'gpu':
+        caffe.set_mode_gpu()
+    elif args.device == 'cpu':
+        caffe.set_mode_cpu()
+
     if args.gpu is not None:
+        if args.mode == 'cpu':
+            raise ValueError('Cannot specify GPU when using CPU mode')
         caffe.set_device(args.gpu)
-    caffe.set_mode_gpu()
 
     prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
     if args.weights:
