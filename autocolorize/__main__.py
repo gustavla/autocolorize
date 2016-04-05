@@ -25,10 +25,11 @@ def download_file(url, fn):
                 cur_size += BUFFER
                 if i % 20 == 0:
                     progress = cur_size / TOTAL_SIZE
-                    n = int(progress * BARS)
+                    n = int(np.ceil(progress * BARS))
                     bar = '#' * n + '.' * (BARS - n)
                     print('\r[{}] {:.1f} MiB'.format(bar, cur_size / 1024**2), end='')
                 f.write(chunk)
+        print()
         print('Saved weights to', fn)
 
 
