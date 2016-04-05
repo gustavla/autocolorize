@@ -6,7 +6,7 @@ from . import image
 #from .checker import checker_main
 
 
-VERSION = (0, 1, 2)
+VERSION = (0, 1, 3)
 ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
