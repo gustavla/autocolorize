@@ -389,9 +389,6 @@ layer {
   }
 }
 
-# Upsampling
-#:call interp-shrink 4 0 0 conv1_1 conv1_1_full
-
 layer {
   bottom: "pool5"
   top: "fc6"
@@ -462,43 +459,6 @@ layer {
   }
 }
 
-# Re-sampling to make dense hypercolumn
-# HOLE = 8
-#:call interp-shrink 8 0 0 data data_full
-#:call interp-shrink 8 0 0 conv1_1 conv1_1_full
-#:call interp-shrink 8 0 0 conv1_2 conv1_2_full
-#:call interp-shrink 4 0 0 conv2_1 conv2_1_full
-#:call interp-shrink 4 0 0 conv2_2 conv2_2_full
-#:call interp-shrink 2 0 0 conv3_1 conv3_1_full
-#:call interp-shrink 2 0 0 conv3_2 conv3_2_full
-#:call interp-shrink 2 0 0 conv3_3 conv3_3_full
-#:call interp-zoom 1 0 0 conv4_1 conv4_1_full
-#:call interp-zoom 1 0 0 conv4_2 conv4_2_full
-#:call interp-zoom 1 0 0 conv4_3 conv4_3_full
-#:call interp-zoom 2 0 0 conv5_1 conv5_1_full
-#:call interp-zoom 2 0 0 conv5_2 conv5_2_full
-#:call interp-zoom 2 0 0 conv5_3 conv5_3_full
-#:call interp-zoom 4 0 0 fc6 fc6_full
-#:call interp-zoom 4 0 0 fc7 fc7_full
-
-# HOLE = 4
-#:call interp-shrink 4 0 0 data data_full
-#:call interp-shrink 4 0 0 conv1_1 conv1_1_full
-#:call interp-shrink 4 0 0 conv1_2 conv1_2_full
-#:call interp-shrink 2 0 0 conv2_1 conv2_1_full
-#:call interp-shrink 2 0 0 conv2_2 conv2_2_full
-#:call interp-zoom 1 0 0 conv3_1 conv3_1_full
-#:call interp-zoom 1 0 0 conv3_2 conv3_2_full
-#:call interp-zoom 1 0 0 conv3_3 conv3_3_full
-#:call interp-zoom 2 0 0 conv4_1 conv4_1_full
-#:call interp-zoom 2 0 0 conv4_2 conv4_2_full
-#:call interp-zoom 2 0 0 conv4_3 conv4_3_full
-#:call interp-zoom 4 0 0 conv5_1 conv5_1_full
-#:call interp-zoom 4 0 0 conv5_2 conv5_2_full
-#:call interp-zoom 4 0 0 conv5_3 conv5_3_full
-#:call interp-zoom 8 0 0 fc6 fc6_full
-#:call interp-zoom 8 0 0 fc7 fc7_full
-
 layer {
   name: "data_full", type: "Pooling"
   bottom: "data" top: "data_full"
@@ -508,7 +468,6 @@ layer {
     pad: 0
   }
 }
-layer { name: "data_full_silence" type: "Silence" bottom: "data_full" }
 
 layer {
   name: "conv1_1_full", type: "Pooling"
@@ -519,7 +478,6 @@ layer {
     pad: 0
   }
 }
-layer { name: "conv1_1_full_silence" type: "Silence" bottom: "conv1_1_full" }
 
 layer {
   name: "conv1_2_full", type: "Pooling"
@@ -530,7 +488,6 @@ layer {
     pad: 0
   }
 }
-layer { name: "conv1_2_full_silence" type: "Silence" bottom: "conv1_2_full" }
 
 layer {
   name: "conv2_1_full", type: "Pooling"
@@ -541,7 +498,6 @@ layer {
     pad: 0
   }
 }
-layer { name: "conv2_1_full_silence" type: "Silence" bottom: "conv2_1_full" }
 
 layer {
   name: "conv2_2_full", type: "Pooling"
@@ -553,114 +509,269 @@ layer {
   }
 }
 
-layer { name: "conv2_2_full_silence" type: "Silence" bottom: "conv2_2_full" }
+# conv4_1 upsampling
+layer {
+  name: "conv4_1_reshaped" type: "Reshape"
+  bottom: "conv4_1" top: "conv4_1_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
 
 layer {
-  name: "conv4_1_full", type: "Deconvolution"
-  bottom: "conv4_1" top: "conv4_1_full"
+  name: "conv4_1_full_reshaped", type: "Deconvolution"
+  bottom: "conv4_1_reshaped" top: "conv4_1_full_reshaped"
   convolution_param {
     kernel_size: 4 stride: 2
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 1
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv4_1_full_silence" type: "Silence" bottom: "conv4_1_full" }
 
 layer {
-  name: "conv4_2_full", type: "Deconvolution"
-  bottom: "conv4_2" top: "conv4_2_full"
+  name: "conv4_1_full" type: "Reshape"
+  bottom: "conv4_1_full_reshaped" top: "conv4_1_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# conv4_2 upsampling
+layer {
+  name: "conv4_2_reshaped" type: "Reshape"
+  bottom: "conv4_2" top: "conv4_2_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "conv4_2_full_reshaped", type: "Deconvolution"
+  bottom: "conv4_2_reshaped" top: "conv4_2_full_reshaped"
   convolution_param {
     kernel_size: 4 stride: 2
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 1
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv4_2_full_silence" type: "Silence" bottom: "conv4_2_full" }
 
 layer {
-  name: "conv4_3_full", type: "Deconvolution"
-  bottom: "conv4_3" top: "conv4_3_full"
+  name: "conv4_2_full" type: "Reshape"
+  bottom: "conv4_2_full_reshaped" top: "conv4_2_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# conv4_3 upsampling
+layer {
+  name: "conv4_3_reshaped" type: "Reshape"
+  bottom: "conv4_3" top: "conv4_3_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "conv4_3_full_reshaped", type: "Deconvolution"
+  bottom: "conv4_3_reshaped" top: "conv4_3_full_reshaped"
   convolution_param {
     kernel_size: 4 stride: 2
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 1
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv4_3_full_silence" type: "Silence" bottom: "conv4_3_full" }
 
 layer {
-  name: "conv5_1_full", type: "Deconvolution"
-  bottom: "conv5_1" top: "conv5_1_full"
+  name: "conv4_3_full" type: "Reshape"
+  bottom: "conv4_3_full_reshaped" top: "conv4_3_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# conv5_1 upsampling
+layer {
+  name: "conv5_1_reshaped" type: "Reshape"
+  bottom: "conv5_1" top: "conv5_1_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "conv5_1_full_reshaped", type: "Deconvolution"
+  bottom: "conv5_1_reshaped" top: "conv5_1_full_reshaped"
   convolution_param {
     kernel_size: 8 stride: 4
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 2
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv5_1_full_silence" type: "Silence" bottom: "conv5_1_full" }
 
 layer {
-  name: "conv5_2_full", type: "Deconvolution"
-  bottom: "conv5_2" top: "conv5_2_full"
+  name: "conv5_1_full" type: "Reshape"
+  bottom: "conv5_1_full_reshaped" top: "conv5_1_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# conv5_2 upsampling
+layer {
+  name: "conv5_2_reshaped" type: "Reshape"
+  bottom: "conv5_2" top: "conv5_2_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "conv5_2_full_reshaped", type: "Deconvolution"
+  bottom: "conv5_2_reshaped" top: "conv5_2_full_reshaped"
   convolution_param {
     kernel_size: 8 stride: 4
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 2
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv5_2_full_silence" type: "Silence" bottom: "conv5_2_full" }
 
 layer {
-  name: "conv5_3_full", type: "Deconvolution"
-  bottom: "conv5_3" top: "conv5_3_full"
+  name: "conv5_2_full" type: "Reshape"
+  bottom: "conv5_2_full_reshaped" top: "conv5_2_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# conv5_3 upsampling
+layer {
+  name: "conv5_3_reshaped" type: "Reshape"
+  bottom: "conv5_3" top: "conv5_3_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "conv5_3_full_reshaped", type: "Deconvolution"
+  bottom: "conv5_3_reshaped" top: "conv5_3_full_reshaped"
   convolution_param {
     kernel_size: 8 stride: 4
-    num_output: 512 group: 512
+    num_output: 1 group: 1
     pad: 2
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "conv5_3_full_silence" type: "Silence" bottom: "conv5_3_full" }
-
 
 layer {
-  name: "fc6_full", type: "Deconvolution"
-  bottom: "fc6" top: "fc6_full"
+  name: "conv5_3_full" type: "Reshape"
+  bottom: "conv5_3_full_reshaped" top: "conv5_3_full"
+  reshape_param {
+    shape { dim: -1 dim: 512 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# fc6 upsampling
+layer {
+  name: "fc6_reshaped" type: "Reshape"
+  bottom: "fc6" top: "fc6_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "fc6_full_reshaped", type: "Deconvolution"
+  bottom: "fc6_reshaped" top: "fc6_full_reshaped"
   convolution_param {
     kernel_size: 16 stride: 8
-    num_output: 4096 group: 4096
+    num_output: 1 group: 1
     pad: 4
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "fc6_full_silence" type: "Silence" bottom: "fc6_full" }
-
 
 layer {
-  name: "fc7_full", type: "Deconvolution"
-  bottom: "fc7" top: "fc7_full"
+  name: "fc6_full" type: "Reshape"
+  bottom: "fc6_full_reshaped" top: "fc6_full"
+  reshape_param {
+    shape { dim: -1 dim: 4096 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# fc7 upsampling
+layer {
+  name: "fc7_reshaped" type: "Reshape"
+  bottom: "fc7" top: "fc7_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "fc7_full_reshaped", type: "Deconvolution"
+  bottom: "fc7_reshaped" top: "fc7_full_reshaped"
   convolution_param {
     kernel_size: 16 stride: 8
-    num_output: 4096 group: 4096
+    num_output: 1 group: 1
     pad: 4
     weight_filler: { type: "bilinear" } bias_term: false
   }
   param { lr_mult: 0 decay_mult: 0 }
 }
-layer { name: "fc7_full_silence" type: "Silence" bottom: "fc7_full" }
 
+layer {
+  name: "fc7_full" type: "Reshape"
+  bottom: "fc7_full_reshaped" top: "fc7_full"
+  reshape_param {
+    shape { dim: -1 dim: 4096 }
+    axis: 0
+    num_axes: 2
+  }
+}
 
 layer {
   name: "dense_hypercolumn"
@@ -765,14 +876,25 @@ layer {
   top: "prediction_c_softmax"
 }
 
+# prediction_h upsample
 layer {
-  name: "prediction_h_full"
+  name: "prediction_h_softmax_reshaped" type: "Reshape"
+  bottom: "prediction_h_softmax" top: "prediction_h_softmax_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+layer {
+  name: "prediction_h_full_reshaped"
   type: "Deconvolution"
-  bottom: "prediction_h_softmax"
-  top: "prediction_h_full"
+  bottom: "prediction_h_softmax_reshaped"
+  top: "prediction_h_full_reshaped"
   convolution_param {
     kernel_size: 8 stride: 4
-    num_output: 32 group: 32
+    num_output: 1 group: 1
     pad: 2
     weight_filler: { type: "bilinear" }
     bias_term: false
@@ -780,15 +902,35 @@ layer {
   param { lr_mult: 0 decay_mult: 0 }
 }
 
+layer {
+  name: "prediction_h_full" type: "Reshape"
+  bottom: "prediction_h_full_reshaped" top: "prediction_h_full"
+  reshape_param {
+    shape { dim: -1 dim: 32 }
+    axis: 0
+    num_axes: 2
+  }
+}
+
+# prediction_c upsample
+layer {
+  name: "prediction_c_softmax_reshaped" type: "Reshape"
+  bottom: "prediction_c_softmax" top: "prediction_c_softmax_reshaped"
+  reshape_param {
+    shape { dim: -1 dim: 1 }
+    axis: 0
+    num_axes: 2
+  }
+}
 
 layer {
-  name: "prediction_c_full"
+  name: "prediction_c_full_reshaped"
   type: "Deconvolution"
-  bottom: "prediction_c_softmax"
-  top: "prediction_c_full"
+  bottom: "prediction_c_softmax_reshaped"
+  top: "prediction_c_full_reshaped"
   convolution_param {
     kernel_size: 8 stride: 4
-    num_output: 32 group: 32
+    num_output: 1 group: 1
     pad: 2
     weight_filler: { type: "bilinear" }
     bias_term: false
@@ -796,3 +938,12 @@ layer {
   param { lr_mult: 0 decay_mult: 0 }
 }
 
+layer {
+  name: "prediction_c_full" type: "Reshape"
+  bottom: "prediction_c_full_reshaped" top: "prediction_c_full"
+  reshape_param {
+    shape { dim: -1 dim: 32 }
+    axis: 0
+    num_axes: 2
+  }
+}
