@@ -25,7 +25,7 @@ CLASSIFIERS = [
 
 args = dict(
     name='autocolorize',
-    version='0.1.0',
+    version='0.1.1',
     url="https://github.com/gustavla/autocolorize",
     description="Automatic colorizaton of grayscale images using Deep Learning.",
     maintainer='Gustav Larsson',

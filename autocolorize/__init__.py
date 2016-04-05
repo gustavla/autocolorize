@@ -7,7 +7,7 @@ from . import image
 
 
 VERSION = (0, 1, 1)
-ISRELEASED = False
+ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
