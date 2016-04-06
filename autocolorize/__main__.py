@@ -127,7 +127,7 @@ def calc_rgb(classifier, grayscale, param=None, name=None):
         c_method = 'median'
         h_method = 'expectation-cf'
     else:
-        vv = param.split('-')
+        vv = param.split(':')
         c_method = vv[0]
         h_method = vv[1]
 
