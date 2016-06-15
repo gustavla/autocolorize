@@ -8,7 +8,7 @@ import time
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RES_DIR = os.path.join(SCRIPT_DIR, 'res')
+RES_DIR = os.path.expanduser('~/.autocolorize')
 WEIGHTS_URL = 'http://people.cs.uchicago.edu/~larsson/colorization/res/autocolorize.caffemodel.h5'
 TOTAL_SIZE = 588203256
 
@@ -33,9 +33,24 @@ def download_file(url, fn):
         print('Saved weights to', fn)
 
 
+def weights_filename_with_download(weights):
+    if not os.path.isdir(RES_DIR):
+        os.mkdir(RES_DIR)
+
+    prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
+    if weights:
+        weights_fn = weights
+    else:
+        # Try downloading it
+        weights_fn = os.path.join(RES_DIR, 'autocolorize.caffemodel.h5')
+        if not os.path.isfile(weights_fn):
+            print('Downloading weights file...')
+            download_file(WEIGHTS_URL, weights_fn)
+    return weights_fn
+
+
 def main():
     import argparse
-    import caffe
     parser = argparse.ArgumentParser()
     parser.add_argument('input', nargs='+', type=str, help='Input images')
     parser.add_argument('-o', '--output', type=str,
@@ -46,9 +61,15 @@ def main():
     parser.add_argument('-d', '--device', choices=['cpu', 'gpu'],
                         default='gpu')
     parser.add_argument('-p', '--param', type=str)
+    parser.add_argument('--install', action='store_true',
+                        help='Download weights file')
     args = parser.parse_args()
 
-    start = time.time()
+    weights_fn = weights_filename_with_download(args.weights)
+    if args.install:
+        return
+
+    import caffe
 
     if args.device == 'gpu':
         caffe.set_mode_gpu()
@@ -59,16 +80,6 @@ def main():
         if args.mode == 'cpu':
             raise ValueError('Cannot specify GPU when using CPU mode')
         caffe.set_device(args.gpu)
-
-    prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
-    if args.weights:
-        weights_fn = args.weights
-    else:
-        # Try downloading it
-        weights_fn = os.path.join(RES_DIR, 'autocolorize.caffemodel.h5')
-        if not os.path.isfile(weights_fn):
-            print('Downloading weights file...')
-            download_file(WEIGHTS_URL, weights_fn)
 
     classifier = autocolorize.load_classifier(prototxt_fn,
                                               weights=weights_fn)
@@ -81,7 +92,8 @@ def main():
         output_fn0 = args.output
         output_dir = None
         if len(img_list) > 1:
-            raise ValueError("Cannot output to a single file if multiple files are input")
+            raise ValueError("Cannot output to a single file if "
+                             "multiple files are input")
     else:
         output_dir = args.output
 

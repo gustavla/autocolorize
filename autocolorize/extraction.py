@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import glob
 import re
-import caffe
 import os
 import numpy as np
 from . import image
@@ -16,6 +15,7 @@ HOLE = 2
 
 
 def load_classifier(bare_fn, snap_dir='snapshots', iteration=None, weights=None):
+    import caffe
     """
     Loads classifier with latest snapshot
     """
