@@ -8,7 +8,8 @@ import time
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RES_DIR = os.path.expanduser('~/.autocolorize')
+RES_DIR = os.path.join(SCRIPT_DIR, 'res')
+WEIGHTS_DIR = os.path.expanduser('~/.autocolorize')
 WEIGHTS_URL = 'http://people.cs.uchicago.edu/~larsson/colorization/res/autocolorize.caffemodel.h5'
 TOTAL_SIZE = 588203256
 
@@ -34,14 +35,14 @@ def download_file(url, fn):
 
 
 def weights_filename_with_download(weights):
-    if not os.path.isdir(RES_DIR):
-        os.mkdir(RES_DIR)
+    if not os.path.isdir(WEIGHTS_DIR):
+        os.mkdir(WEIGHTS_DIR)
 
     if weights:
         weights_fn = weights
     else:
         # Try downloading it
-        weights_fn = os.path.join(RES_DIR, 'autocolorize.caffemodel.h5')
+        weights_fn = os.path.join(WEIGHTS_DIR, 'autocolorize.caffemodel.h5')
         if not os.path.isfile(weights_fn):
             print('Downloading weights file...')
             download_file(WEIGHTS_URL, weights_fn)
