@@ -37,7 +37,6 @@ def weights_filename_with_download(weights):
     if not os.path.isdir(RES_DIR):
         os.mkdir(RES_DIR)
 
-    prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
     if weights:
         weights_fn = weights
     else:
@@ -65,6 +64,7 @@ def main():
                         help='Download weights file')
     args = parser.parse_args()
 
+    prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
     weights_fn = weights_filename_with_download(args.weights)
     if args.install:
         return
