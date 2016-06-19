@@ -52,6 +52,8 @@ def extract_sparse(classifier, grayscale, *chs):
     classifier: Caffe Classifier object
 
     """
+    shape = grayscale.shape[:2]
+    img = grayscale
     # Set scale so that the longest is MAX_SIDE
     min_side = np.min(img.shape[:2])
     max_side = np.max(img.shape[:2])
@@ -79,8 +81,6 @@ def extract_sparse(classifier, grayscale, *chs):
 
     print('data', data.shape)
 
-    shape = raw_img.shape[:2]
-
     scaled_size = size // HOLE
 
     scaled_shape = tuple([shi // HOLE for shi in raw_shape[:2]])
@@ -103,7 +103,7 @@ def extract_sparse(classifier, grayscale, *chs):
         centroids[0, :len(ii_), 0] = ii_
         centroids[0, :len(jj_), 1] = jj_
 
-        ret = classifier.forward(data=grayscale, centroids=centroids)
+        ret = classifier.forward(data=data, centroids=centroids)
 
         ii_ = img_ii.ravel()[chunk_slice]
         jj_ = img_jj.ravel()[chunk_slice]

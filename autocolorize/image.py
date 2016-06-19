@@ -76,5 +76,9 @@ def center_crop_reflect(img, size):
     a0 = max(0, size[0] - img.shape[0])
     a1 = max(0, size[1] - img.shape[1])
 
-    pimg = util.pad(img, ((a0//2, a0-a0//2), (a1//2, a1-a1//2), (0, 0)), mode='reflect')
+    v = ((a0//2, a0-a0//2), (a1//2, a1-a1//2))
+    if img.ndim == 3:
+        v = v + ((0, 0),)
+
+    pimg = util.pad(img, v, mode='reflect')
     return center_crop(pimg, size)
