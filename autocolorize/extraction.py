@@ -130,7 +130,7 @@ def extract_sparse(classifier, grayscale, *chs):
     return tuple(res)
 
 
-def extract(classifier, grayscale, *chs, max_side=500, min_side=256):
+def extract(classifier, grayscale, chs, max_side=500, min_side=256):
     """
     Extract using dense model (faster).
 

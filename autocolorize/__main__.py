@@ -165,8 +165,7 @@ def calc_rgb(classifier, grayscale, param=None, name=None,
              min_side=256, max_side=500, return_info=False):
     img_h, img_c, info = autocolorize.extract(classifier,
                                               grayscale,
-                                              'prediction_h',
-                                              'prediction_c',
+                                              ['prediction_h', 'prediction_c'],
                                               min_side=min_side,
                                               max_side=max_side)
 
