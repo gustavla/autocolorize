@@ -3,18 +3,21 @@ import glob
 import re
 import os
 import numpy as np
-from . import image
-from scipy.ndimage import zoom
+from . import image, config, download
 from skimage.transform import rescale
+from .color import match_lightness
+from skimage import color
+import tempfile
+from string import Template
 
 
 # Could be moved to a more configurable place
 MAX_SIDE = 500
 MIN_SIDE = 256
-HOLE = 2
 
 
-def load_classifier(bare_fn, snap_dir='snapshots', iteration=None, weights=None):
+def load_classifier(bare_fn, snap_dir='snapshots',
+                    iteration=None, weights=None):
     import caffe
     """
     Loads classifier with latest snapshot
@@ -25,9 +28,15 @@ def load_classifier(bare_fn, snap_dir='snapshots', iteration=None, weights=None)
     else:
         if iteration is None:
             snap_fns = glob.glob(os.path.join(snap_dir, '*.caffemodel.h5'))
-            snapshots = sorted([(int(re.sub('[^0-9]', '', os.path.splitext(fn)[0])), fn) for fn in snap_fns])
+            snapshots = sorted([
+                (int(re.sub('[^0-9]', '', os.path.splitext(fn)[0])), fn)
+                for fn in snap_fns
+            ])
         else:
-            snapshots = [(iteration, os.path.join(snap_dir, 'snapshot_iter_{}.caffemodel.h5'.format(iteration)))]
+            iter_fn = 'snapshot_iter_{}.caffemodel.h5'.format(iteration)
+            snapshots = [
+                (iteration, os.path.join(snap_dir, iter_fn))
+            ]
         fn = snapshots[-1][1]
 
     if fn:
@@ -35,6 +44,27 @@ def load_classifier(bare_fn, snap_dir='snapshots', iteration=None, weights=None)
         classifier = caffe.Classifier(bare_fn, fn)
     else:
         raise ValueError('No snapshot')
+    return classifier
+
+
+def load_default_classifier(input_size=512, weights=None):
+    template_prototxt_fn = os.path.join(config.RES_DIR,
+                                        'autocolorize.prototxt.template')
+    with open(template_prototxt_fn) as f:
+        template_content = f.read()
+    weights_fn = download.weights_filename_with_download(weights)
+
+    with tempfile.NamedTemporaryFile(mode='w+',
+                                     suffix='prototxt',
+                                     delete=True) as f:
+        # Make prototxt file
+        d = dict(INPUT_SIZE=input_size)
+        content = Template(template_content).substitute(d)
+        f.write(content)
+        f.seek(0)
+
+        classifier = load_classifier(f.name, weights=weights_fn)
+
     return classifier
 
 
@@ -52,7 +82,6 @@ def extract_sparse(classifier, grayscale, *chs):
     classifier: Caffe Classifier object
 
     """
-    shape = grayscale.shape[:2]
     img = grayscale
     # Set scale so that the longest is MAX_SIDE
     min_side = np.min(img.shape[:2])
@@ -61,17 +90,18 @@ def extract_sparse(classifier, grayscale, *chs):
     if max_side * scale >= MAX_SIDE:
         scale = MAX_SIDE / max_side
 
+    HOLE = 2
+
     samples = classifier.blobs['centroids'].data.shape[1]
     size = classifier.blobs['data'].data.shape[2]
     centroids = np.zeros((1, samples, 2), dtype=np.float32)
-    full_shape = grayscale.shape[:2]
     grayscale = resize_by_factor(grayscale, scale)
     raw_shape = grayscale.shape[:2]
 
     st0 = (size - raw_shape[0])//2
-    en0 = st0 + raw_shape[0]
+    #en0 = st0 + raw_shape[0]
     st1 = (size - raw_shape[1])//2
-    en1 = st1 + raw_shape[1]
+    #en1 = st1 + raw_shape[1]
 
     grayscale = image.center_crop_reflect(grayscale, (size, size))
 
@@ -81,7 +111,7 @@ def extract_sparse(classifier, grayscale, *chs):
 
     print('data', data.shape)
 
-    scaled_size = size // HOLE
+    #scaled_size = size // HOLE
 
     scaled_shape = tuple([shi // HOLE for shi in raw_shape[:2]])
 
@@ -90,7 +120,8 @@ def extract_sparse(classifier, grayscale, *chs):
     #scaled_b = np.zeros(scaled_shape + (1,))
     scaleds = [None] * len(chs)
 
-    img_ii, img_jj = np.meshgrid(range(scaled_shape[0]), range(scaled_shape[1]))
+    img_ii, img_jj = np.meshgrid(range(scaled_shape[0]),
+                                 range(scaled_shape[1]))
 
     ii = HOLE//2 + st0 + img_ii * HOLE
     jj = HOLE//2 + st1 + img_jj * HOLE
@@ -144,26 +175,26 @@ def extract(classifier, grayscale, chs, max_side=500, min_side=256):
     if longer_side * scale >= max_side:
         scale = max_side / longer_side
 
-    HOLE = 4
+    #HOLE = 4
 
     #samples = classifier.blobs['centroids'].data.shape[1]
     size = classifier.blobs['data'].data.shape[2]
     #centroids = np.zeros((1, samples, 2), dtype=np.float32)
     full_shape = grayscale.shape[:2]
-    raw_grayscale = grayscale.copy()
+    #raw_grayscale = grayscale.copy()
     if scale != 1:
         grayscale = resize_by_factor(grayscale, scale)
     raw_shape = grayscale.shape[:2]
 
-    st0 = (size - raw_shape[0]) // 2
-    en0 = st0 + raw_shape[0]
-    st1 = (size - raw_shape[1]) // 2
-    en1 = st1 + raw_shape[1]
+    #st0 = (size - raw_shape[0]) // 2
+    #en0 = st0 + raw_shape[0]
+    #st1 = (size - raw_shape[1]) // 2
+    #en1 = st1 + raw_shape[1]
 
     grayscale = image.center_crop(grayscale, (size, size))
     data = grayscale[np.newaxis, np.newaxis]
-    scaled_size = size // HOLE
-    scaled_shape = tuple([shi // HOLE for shi in raw_shape[:2]])
+    #scaled_size = size // HOLE
+    #scaled_shape = tuple([shi // HOLE for shi in raw_shape[:2]])
 
     ret = classifier.forward(data=data)
 
@@ -171,7 +202,8 @@ def extract(classifier, grayscale, chs, max_side=500, min_side=256):
 
     data = {key: classifier.blobs[key].data for key in classifier.blobs}
 
-    scaleds = [ret['prediction_h_full'][0].transpose(1, 2, 0), ret['prediction_c_full'][0].transpose(1, 2,0)]
+    scaleds = [ret['prediction_h_full'][0].transpose(1, 2, 0),
+               ret['prediction_c_full'][0].transpose(1, 2, 0)]
 
     scaled_combined = np.concatenate(scaleds, axis=-1)
 
@@ -196,3 +228,128 @@ def extract(classifier, grayscale, chs, max_side=500, min_side=256):
                 max_side=max_side)
 
     return tuple(res) + (info,)
+
+
+def calc_rgb(classifier, grayscale, param=None,
+             min_side=256, max_side=500, return_info=False):
+    img_h, img_c, info = extract(classifier,
+                                 grayscale,
+                                 ['prediction_h', 'prediction_c'],
+                                 min_side=min_side,
+                                 max_side=max_side)
+
+    bins = img_h.shape[-1]
+    hist_h = img_h
+    hist_c = img_c
+
+    spaced = (np.arange(bins) + 0.5) / bins
+
+    if param is None:
+        c_method = 'median'
+        h_method = 'expectation-cf'
+    else:
+        vv = param.split(':')
+        c_method = vv[0]
+        h_method = vv[1]
+
+    factor = 1.0
+
+    # Hue
+    if h_method == 'mode':
+        hsv_h = (hist_h.argmax(-1) + 0.5) / bins
+    elif h_method == 'expectation':
+        tau = 2 * np.pi
+        a = hist_h * np.exp(1j * tau * spaced)
+        hsv_h = (np.angle(a.sum(-1)) / tau) % 1.0
+    elif h_method == 'expectation-cf':  # with chromatic fading
+        tau = 2 * np.pi
+        a = hist_h * np.exp(1j * tau * spaced)
+        cc = abs(a.mean(-1))
+        factor = cc.clip(0, 0.03) / 0.03
+        hsv_h = (np.angle(a.sum(-1)) / tau) % 1.0
+    elif h_method == 'pixelwise':
+        cum_h = hist_h.cumsum(-1)
+        draws = (np.random.uniform(size=cum_h.shape[:2] + (1,)) > cum_h)
+        z_h = (draws.sum(-1) + 0.5) / bins
+        hsv_h = z_h
+    elif h_method == 'median':
+        cum_h = hist_h.cumsum(-1)
+        z_h = ((0.5 > cum_h).sum(-1) + 0.5) / bins
+        hsv_h = z_h
+    elif h_method == 'once':
+        cum_h = hist_h.cumsum(-1)
+        z_h = ((np.random.uniform() > cum_h).sum(-1) + 0.5) / bins
+        hsv_h = z_h
+
+    # Chroma
+    if c_method == 'mode':  # mode
+        hsv_c = hist_c.argmax(-1) / bins
+    elif c_method == 'expectation':  # expectation
+        hsv_c = (hist_c * spaced).sum(-1)
+    elif c_method == 'pixelwise':
+        cum_c = hist_c.cumsum(-1)
+        draws = (np.random.uniform(size=cum_c.shape) > cum_c)
+        z_c = (draws.sum(-1) + 0.5) / bins
+        hsv_c = z_c
+    elif c_method == 'once':
+        cum_c = hist_c.cumsum(-1)
+        z_c = ((np.random.uniform() > cum_c).sum(-1) + 0.5) / bins
+        hsv_c = z_c
+    elif c_method == 'median':
+        cum_c = hist_c.cumsum(-1)
+        z_c = ((0.5 > cum_c).sum(-1) + 0.5) / bins
+        hsv_c = z_c
+    elif c_method == 'q75':
+        cum_c = hist_c.cumsum(-1)
+        z_c = ((0.75 > cum_c).sum(-1) + 0.5) / bins
+        hsv_c = z_c
+    else:
+        raise ValueError('Unknown chroma method')
+
+    hsv_c *= factor
+
+    hsv_v = grayscale + hsv_c / 2
+    hsv_s = 2 * hsv_c / (2 * grayscale + hsv_c)
+
+    hsv = np.concatenate([hsv_h[..., np.newaxis],
+                          hsv_s[..., np.newaxis],
+                          hsv_v[..., np.newaxis]], axis=-1)
+    rgb = color.hsv2rgb(hsv.clip(0, 1)).clip(0, 1)
+
+    if return_info:
+        return rgb, info
+    else:
+        return rgb
+
+
+def colorize(raw_img, param=None, classifier=None,
+             min_side=None, max_side=None, return_info=False):
+
+    if classifier is None:
+        classifier = load_default_classifier()
+
+    if raw_img.ndim == 3:
+        grayscale = raw_img[..., :3].mean(-1)
+    else:
+        grayscale = raw_img
+
+    input_size = classifier.blobs['data'].data.shape[2]
+
+    if min_side is None:
+        min_side = input_size // 2
+
+    if max_side is None:
+        max_side = input_size - 12
+
+    rgb, info = calc_rgb(classifier, grayscale,
+                         param=param,
+                         min_side=min_side, max_side=max_side,
+                         return_info=True)
+
+    # Correct the lightness
+    rgb = match_lightness(rgb, grayscale)
+
+    if return_info:
+        return rgb, info
+    else:
+        return rgb
