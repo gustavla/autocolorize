@@ -36,7 +36,7 @@ args = dict(
         'autocolorize',
         'autocolorize.res',
     ],
-    package_data={'autocolorize.res': ['autocolorize.prototxt']},
+    package_data={'autocolorize.res': ['autocolorize.prototxt.template']},
     license='BSD',
     classifiers=CLASSIFIERS,
 )

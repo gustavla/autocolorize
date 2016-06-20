@@ -130,19 +130,19 @@ def extract_sparse(classifier, grayscale, *chs):
     return tuple(res)
 
 
-def extract(classifier, grayscale, *chs):
+def extract(classifier, grayscale, *chs, max_side=500, min_side=256):
     """
     Extract using dense model (faster).
 
     classifier: Caffe Classifier object
     grayscale: Input image
     """
-    # Set scale so that the longest is MAX_SIDE
-    min_side = np.min(grayscale.shape[:2])
-    max_side = np.max(grayscale.shape[:2])
-    scale = min(MIN_SIDE / min_side, 1)
-    if max_side * scale >= MAX_SIDE:
-        scale = MAX_SIDE / max_side
+    # Set scale so that the longest is max_side
+    shorter_side = np.min(grayscale.shape[:2])
+    longer_side = np.max(grayscale.shape[:2])
+    scale = min(min_side / shorter_side, 1)
+    if longer_side * scale >= max_side:
+        scale = max_side / longer_side
 
     HOLE = 4
 
@@ -155,25 +155,19 @@ def extract(classifier, grayscale, *chs):
         grayscale = resize_by_factor(grayscale, scale)
     raw_shape = grayscale.shape[:2]
 
-    st0 = (size - raw_shape[0])//2
+    st0 = (size - raw_shape[0]) // 2
     en0 = st0 + raw_shape[0]
-    st1 = (size - raw_shape[1])//2
+    st1 = (size - raw_shape[1]) // 2
     en1 = st1 + raw_shape[1]
 
-    #raw_img = image.center_crop_reflect(raw_img, (size, size))
     grayscale = image.center_crop(grayscale, (size, size))
-
-    #bgr = raw_img.transpose(2, 0, 1)[np.newaxis]
-
     data = grayscale[np.newaxis, np.newaxis]
-
-    #shape = grayscale.shape[:2]
-
     scaled_size = size // HOLE
-
     scaled_shape = tuple([shi // HOLE for shi in raw_shape[:2]])
 
     ret = classifier.forward(data=data)
+
+    #print('Output shape', ret['prediction_h_full'].shape)
 
     data = {key: classifier.blobs[key].data for key in classifier.blobs}
 
@@ -194,4 +188,11 @@ def extract(classifier, grayscale, *chs):
         res.append(combined[..., cur:cur + C])
         cur += C
 
-    return tuple(res)
+    info = dict(input_shape=full_shape,
+                scaled_shape=raw_shape,
+                padded_shape=grayscale.shape[:2],
+                output_shape=ret['prediction_h_full'].shape,
+                min_side=min_side,
+                max_side=max_side)
+
+    return tuple(res) + (info,)

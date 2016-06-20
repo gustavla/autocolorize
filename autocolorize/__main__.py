@@ -5,7 +5,10 @@ from skimage import color, exposure
 from scipy.stats import norm
 from . import image
 import time
+import sys
 import os
+import tempfile
+from string import Template
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 RES_DIR = os.path.join(SCRIPT_DIR, 'res')
@@ -61,14 +64,28 @@ def main():
     parser.add_argument('-d', '--device', choices=['cpu', 'gpu'],
                         default='gpu')
     parser.add_argument('-p', '--param', type=str)
+    parser.add_argument('-s', '--size', type=int, default=512, help='Processing size of input')
     parser.add_argument('--install', action='store_true',
                         help='Download weights file')
     args = parser.parse_args()
 
-    prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt')
+    input_size = args.size
+
+    # Not all input sizes will produce even sizes for all layers, so we have
+    # to restrict the choices to multiples of 32
+    if input_size % 32 != 0:
+        print('Invalid processing size (--size {}): Must be a multiple of 32.'.format(input_size), file=sys.stderr)
+        sys.exit(1)
+
+    template_prototxt_fn = os.path.join(RES_DIR, 'autocolorize.prototxt.template')
+    with open(template_prototxt_fn) as f:
+        template_content = f.read()
     weights_fn = weights_filename_with_download(args.weights)
     if args.install:
         return
+
+    min_side = input_size // 2
+    max_side = input_size - 12
 
     import caffe
 
@@ -78,12 +95,19 @@ def main():
         caffe.set_mode_cpu()
 
     if args.gpu is not None:
-        if args.mode == 'cpu':
+        if args.device == 'cpu':
             raise ValueError('Cannot specify GPU when using CPU mode')
         caffe.set_device(args.gpu)
 
-    classifier = autocolorize.load_classifier(prototxt_fn,
-                                              weights=weights_fn)
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='prototxt', delete=True) as f:
+        # Make prototxt file
+        content = Template(template_content).substitute(dict(INPUT_SIZE=input_size))
+        f.write(content)
+        f.seek(0)
+        print(f.name)
+
+        classifier = autocolorize.load_classifier(f.name,
+                                                  weights=weights_fn)
 
     img_list = args.input
     output_fn0 = None
@@ -103,6 +127,9 @@ def main():
         if output_fn0:
             output_fn = output_fn0
         else:
+            if not os.path.isdir(output_dir):
+                os.mkdir(output_dir)
+
             output_fn = os.path.join(output_dir, name + '.png')
 
         raw_img = image.load(img_fn)
@@ -113,8 +140,10 @@ def main():
 
         orig_grayscale = grayscale.copy()
 
-        rgb = calc_rgb(classifier, grayscale,
-                       param=args.param, name=output_fn)
+        rgb, info = calc_rgb(classifier, grayscale,
+                             param=args.param, name=output_fn,
+                             min_side=min_side, max_side=max_side,
+                             return_info=True)
 
         # Correct the lightness
         rgb = autocolorize.match_lightness(rgb, grayscale)
@@ -122,12 +151,24 @@ def main():
 
         print('Colorized: {} -> {}'.format(img_fn, output_fn))
 
+        if args.verbose:
+            print('Min side:', info['min_side'])
+            print('Max side:', info['max_side'])
+            print('Input shape', info['input_shape'])
+            print('Scaled shape', info['scaled_shape'])
+            print('Padded shape', info['padded_shape'])
+            print('Output shape:', info['output_shape'])
 
-def calc_rgb(classifier, grayscale, param=None, name=None):
-    img_h, img_c = autocolorize.extract(classifier,
-                                        grayscale,
-                                        'prediction_h',
-                                        'prediction_c')
+
+
+def calc_rgb(classifier, grayscale, param=None, name=None,
+             min_side=256, max_side=500, return_info=False):
+    img_h, img_c, info = autocolorize.extract(classifier,
+                                              grayscale,
+                                              'prediction_h',
+                                              'prediction_c',
+                                              min_side=min_side,
+                                              max_side=max_side)
 
 
     bins = img_h.shape[-1]
@@ -204,7 +245,10 @@ def calc_rgb(classifier, grayscale, param=None, name=None):
     hsv = np.concatenate([hsv_h[..., np.newaxis], hsv_s[..., np.newaxis], hsv_v[..., np.newaxis]], axis=-1)
     rgb = color.hsv2rgb(hsv.clip(0, 1)).clip(0, 1)
 
-    return rgb
+    if return_info:
+        return rgb, info
+    else:
+        return rgb
 
 
 if __name__ == '__main__':
