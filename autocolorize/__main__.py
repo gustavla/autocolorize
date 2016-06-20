@@ -8,9 +8,10 @@ import os
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', nargs='+', type=str, help='Input images')
+    parser.add_argument('input', nargs='*', type=str, help='Input images')
     parser.add_argument('-o', '--output', type=str,
                         help='Output image or directory')
+    parser.add_argument('-V', '--version', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-w', '--weights', type=str, help='Weights file')
     parser.add_argument('-g', '--gpu', type=int),
@@ -22,6 +23,10 @@ def main():
     parser.add_argument('--install', action='store_true',
                         help='Download weights file')
     args = parser.parse_args()
+
+    if args.version:
+        print('autocolorize', autocolorize.__version__)
+        return
 
     input_size = args.size
 
