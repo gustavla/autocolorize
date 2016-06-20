@@ -18,3 +18,11 @@ Make sure that you have Caffe (with Python bindings). Then run::
 Run::
 
     autocolorize grayscale.png -o colorized.png
+
+API
+---
+You can also colorize from Python (assuming ``grayscale`` is the image that you want to colorize)::
+
+    import autocolorize
+    classifier = autocolorize.load_default_classifier()
+    rgb = autocolorize.colorize(grayscale, classifier=classifier)
