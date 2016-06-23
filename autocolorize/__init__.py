@@ -7,8 +7,8 @@ from .datasets import load_image_list
 from .checker import checker_main
 
 
-VERSION = (0, 1, 4)
-ISRELEASED = False
+VERSION = (0, 2, 0)
+ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
