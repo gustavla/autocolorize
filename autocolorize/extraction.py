@@ -231,7 +231,8 @@ def extract(classifier, grayscale, chs, max_side=500, min_side=256):
 
 
 def calc_rgb(classifier, grayscale, param=None,
-             min_side=256, max_side=500, return_info=False):
+             min_side=256, max_side=500,
+             color_boost=1.0, return_info=False):
     img_h, img_c, info = extract(classifier,
                                  grayscale,
                                  ['prediction_h', 'prediction_c'],
@@ -311,6 +312,8 @@ def calc_rgb(classifier, grayscale, param=None,
     hsv_v = grayscale + hsv_c / 2
     hsv_s = 2 * hsv_c / (2 * grayscale + hsv_c)
 
+    hsv_s *= color_boost
+
     hsv = np.concatenate([hsv_h[..., np.newaxis],
                           hsv_s[..., np.newaxis],
                           hsv_v[..., np.newaxis]], axis=-1)
@@ -322,7 +325,7 @@ def calc_rgb(classifier, grayscale, param=None,
         return rgb
 
 
-def colorize(raw_img, param=None, classifier=None,
+def colorize(raw_img, param=None, classifier=None, color_boost=1.0,
              min_side=None, max_side=None, return_info=False):
 
     if classifier is None:
@@ -344,6 +347,7 @@ def colorize(raw_img, param=None, classifier=None,
     rgb, info = calc_rgb(classifier, grayscale,
                          param=param,
                          min_side=min_side, max_side=max_side,
+                         color_boost=color_boost,
                          return_info=True)
 
     # Correct the lightness
