@@ -26,3 +26,8 @@ You can also colorize from Python (assuming ``grayscale`` is the image that you 
     import autocolorize
     classifier = autocolorize.load_default_classifier()
     rgb = autocolorize.colorize(grayscale, classifier=classifier)
+
+Sparse training
+---------------
+We provide custom layers for doing sparse hypercolumn training in both Caffe
+(see ``caffe/``) and Tensorflow (see ``tensorflow/``).
