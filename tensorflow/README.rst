@@ -55,3 +55,14 @@ like this::
     conv3_upscaled = tf.image.resize_bilinear(conv3, [input_size, input_size])
 
     dense_hypercolumn = tf.concat(3, [conv1, conv2_upscaled, conv3_upscaled], name='hypercolumn')
+
+Thanks
+------
+If you find sparse hypercolumn training useful, please consider citing us::
+
+    @inproceedings{larsson2016learning,
+      title={Learning Representations for Automatic Colorization},
+      author={Larsson, Gustav and Maire, Michael and Shakhnarovich, Gregory},
+      booktitle={European Conference on Computer Vision (ECCV)},
+      year={2016}
+    }

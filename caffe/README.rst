@@ -64,3 +64,14 @@ layer::
         }
       }
     }
+
+Thanks
+------
+If you find sparse hypercolumn training useful, please consider citing us::
+
+    @inproceedings{larsson2016learning,
+      title={Learning Representations for Automatic Colorization},
+      author={Larsson, Gustav and Maire, Michael and Shakhnarovich, Gregory},
+      booktitle={European Conference on Computer Vision (ECCV)},
+      year={2016}
+    }
