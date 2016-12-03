@@ -8,7 +8,7 @@ from .checker import checker_main
 
 
 VERSION = (0, 2, 1)
-ISRELEASED = False
+ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
