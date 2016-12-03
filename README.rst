@@ -7,7 +7,7 @@ autocolorize
 Automatically colorize images using Machine Learning.
 
 * `Project page <http://people.cs.uchicago.edu/~larsson/colorization/>`__
-* `arXiv paper <http://arxiv.org/abs/1603.06668>`__
+* ECCV 2016 paper (`arXiv <http://arxiv.org/abs/1603.06668>`__)
 
 Installation
 ------------
