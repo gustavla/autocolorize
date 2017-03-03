@@ -1,0 +1,68 @@
+// Add to "LayerParameter":
+//optional SparseHypercolumnExtractorParameter sparse_hypercolumn_extractor_param = 300;
+//optional ExtendedImageDataParameter extended_image_data_param = 301;
+//optional SoftmaxKLDLossParameter softmax_kld_loss_param = 305;
+//optional SparseHistogramExtractorParameter sparse_histogram_extractor_param = 401;
+//optional UniformToHistogramParameter uniform_to_histogram_param = 402;
+//optional DropPathParameter drop_path_param = 403;
+//optional FractalJoinParameter fractal_join_param = 404;
+
+
+message SparseHypercolumnExtractorParameter {
+  repeated float scale = 1;
+  repeated float offset_height = 2;
+  repeated float offset_width = 3;
+
+  // Sometimes the layers may be scaled differently. This allows adding a multiplier to the activations
+  repeated float activation_mult = 4;
+}
+
+message ExtendedImageDataParameter {
+  enum ImageType {
+    NONE = 0;
+    IMAGE = 1;
+    PIXEL = 2;
+    MAT = 3;
+    COCO_JSON = 4;
+  }
+  optional int64 random_seed = 1 [default = -1];
+  optional ImageType image_type = 2 [default = IMAGE];
+  optional float fill_value = 3 [default = 0];
+
+  // When loading a MAT file, the name of the variable
+  optional string key = 4 [default = 'data'];
+
+  // If true, then the input is assumed to be a UCM map of size
+  // (2*h+1, 2*w+1) corresponding to an image of size (h, w).
+  // The actual crop_size will be crop_size*2+1, and the offset
+  // will make sure to be zero (mod 2).
+  optional bool ucm2 = 5 [default = false];
+
+  // Similar to new_height/new_width, but preserves aspect ratio
+  optional uint32 shortest_side = 6 [default = 0];
+
+  // If positive (and should be greater than shortest_side), the actual value
+  // for shortest_side will be taken uniformly random from
+  // {shortest_side, ..., shortest_side_max}
+  optional uint32 shortest_side_max = 7 [default = 0];
+
+  // Randomly changes the color values
+  optional bool color_perturbation = 8 [default = false];
+}
+
+
+message SoftmaxKLDLossParameter {
+  enum LossType {
+    KL_DIVERGENCE = 0;
+    CROSS_ENTROPY = 1;
+  }
+  optional LossType type = 1 [default = KL_DIVERGENCE];
+}
+
+message SparseHistogramExtractorParameter {
+  repeated uint32 size = 1;
+}
+
+message UniformToHistogramParameter {
+  optional uint32 bins = 1 [default= 32];
+}
