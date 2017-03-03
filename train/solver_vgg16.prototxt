@@ -1,0 +1,21 @@
+train_net: "train_vgg16.prototxt"
+
+lr_policy: "multistep"
+gamma: 0.1
+# Feel free to extend or shorten this training
+stepvalue: 1000000
+stepvalue: 1500000
+stepvalue: 1750000
+base_lr: 0.001
+
+average_loss: 250
+
+display: 5
+max_iter: 2000000
+momentum: 0.9
+weight_decay: 0.0005
+
+snapshot: 10000
+snapshot_prefix: "snapshots/snapshot"
+snapshot_format: HDF5
+solver_mode: GPU

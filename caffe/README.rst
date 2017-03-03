@@ -1,11 +1,14 @@
-Sparse hypercolumn training
-===========================
+Sparse hypercolumn extractor
+============================
 
-Copy all files into your Caffe folder. Then, add the following to your ``src/caffe/proto/caffe.proto`` file in ``LayerParameter``::
+If all you want to add is the sparse hypercolumn extractor, you only have to
+copy the ``spares_hypercolumn_extractor_layer.{hpp,cpp,cu}`` files. Add the
+following to ``LayerParameter``:
 
     optional SparseHypercolumnExtractorParameter sparse_hypercolumn_extractor_param = 1234;
 
-Set ``1234`` to whatever you want that is not in conflict with another layer's parameters. Also add the following to the bottom ``caffe.proto``::
+Set ``1234`` to whatever you want that is not in conflict with another layer's
+parameters. Also add the following to the bottom ``caffe.proto``::
 
     message SparseHypercolumnExtractorParameter {
       repeated float scale = 1;
