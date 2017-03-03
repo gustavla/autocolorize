@@ -32,3 +32,5 @@ Sparse training
 We provide custom layers for doing sparse hypercolumn training in both Caffe
 (see ``caffe/``) and Tensorflow (see ``tensorflow/``). This can be used for other
 image-to-image tasks, such as semantic segmentation or edge prediction.
+
+Look inside the ``train`` folder if you want to train from scratch.
