@@ -230,15 +230,7 @@ def extract(classifier, grayscale, chs, max_side=500, min_side=256):
     return tuple(res) + (info,)
 
 
-def calc_rgb(classifier, grayscale, param=None,
-             min_side=256, max_side=500,
-             color_boost=1.0, return_info=False):
-    img_h, img_c, info = extract(classifier,
-                                 grayscale,
-                                 ['prediction_h', 'prediction_c'],
-                                 min_side=min_side,
-                                 max_side=max_side)
-
+def calc_rgb_from_hue_chroma(grayscale, img_h, img_c, param=None, color_boost=1.0):
     bins = img_h.shape[-1]
     hist_h = img_h
     hist_c = img_c
@@ -318,6 +310,20 @@ def calc_rgb(classifier, grayscale, param=None,
                           hsv_s[..., np.newaxis],
                           hsv_v[..., np.newaxis]], axis=-1)
     rgb = color.hsv2rgb(hsv.clip(0, 1)).clip(0, 1)
+    return rgb
+
+
+def calc_rgb(classifier, grayscale, param=None,
+             min_side=256, max_side=500,
+             color_boost=1.0, return_info=False):
+    img_h, img_c, info = extract(classifier,
+                                 grayscale,
+                                 ['prediction_h', 'prediction_c'],
+                                 min_side=min_side,
+                                 max_side=max_side)
+
+    rgb = calc_rgb_from_hue_chroma(grayscale, img_h, img_c, param=param,
+            color_boost=color_boost)
 
     if return_info:
         return rgb, info
