@@ -16,12 +16,14 @@ Place the ``user_ops`` files in ``tensorflow/core/user_ops``. Add the follow to 
         gpu_srcs = ["sparse_extractor_gpu.cu.cc"],
     )
 
-Now, follow instructions `here
-<https://www.tensorflow.org/versions/r0.10/how_tos/adding_an_op/index.html>`__
-to build into a shared library.
+Now, compile with (cuda flag is optional)::
+
+    bazel build --config=cuda //tensorflow/core/user_ops:sparse_extractor.so
 
 Place this library (``sparse_extractor.so`` file) in a directory and point the
-environment variable ``$TF_USER_OPS`` to it.
+environment variable ``$TF_USER_OPS`` to it. For me, this was done by::
+
+    cp bazel-bin/tensorflow/core/user_ops/sparse_extractor.so $TF_USER_OPS/
 
 Usage in Python
 ---------------
