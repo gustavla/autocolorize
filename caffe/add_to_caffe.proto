@@ -4,8 +4,6 @@
 //optional SoftmaxKLDLossParameter softmax_kld_loss_param = 305;
 //optional SparseHistogramExtractorParameter sparse_histogram_extractor_param = 401;
 //optional UniformToHistogramParameter uniform_to_histogram_param = 402;
-//optional DropPathParameter drop_path_param = 403;
-//optional FractalJoinParameter fractal_join_param = 404;
 
 
 message SparseHypercolumnExtractorParameter {
