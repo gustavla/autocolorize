@@ -57,7 +57,7 @@ def checker_main(inner):
                     param=args.param, name=output_fn)
 
         # Correct the lightness
-        #rgb = autocolorize.match_lightness(rgb, orig_img)
+        rgb = autocolorize.match_lightness(rgb, orig_img)
         rgb = rgb.clip(0, 1)
         image.save(output_fn, rgb)
 
