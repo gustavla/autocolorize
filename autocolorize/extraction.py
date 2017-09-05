@@ -75,7 +75,7 @@ def resize_by_factor(img, factor):
         return img
 
 
-def extract_sparse(classifier, grayscale, *chs):
+def extract_sparse(classifier, grayscale, chs):
     """
     Extract using sparse model (slower).
 
