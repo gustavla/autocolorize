@@ -223,7 +223,7 @@ void ExtendedImageDataTransformer<Dtype>::InitRand() {
     if (this->seed_ == -1) {
       rng_seed = caffe_rng_rand();
     } else {
-      rng_seed = (unsigned int)this->seed_ + this->cur_iter_;
+      rng_seed = (unsigned int)this->seed_;
     }
     this->rng_.reset(new Caffe::RNG(rng_seed));
   } else {
@@ -571,7 +571,7 @@ void ExtendedImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
 
   // data
   top_shape[0] = batch_size;
-  for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
+  for (int i = 0; i < this->prefetch_.size(); ++i) {
     this->prefetch_[i].data_.Reshape(top_shape);
   }
   top[0]->Reshape(top_shape);
@@ -583,7 +583,7 @@ void ExtendedImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
   if (with_label) {
     top[1]->Reshape(label_shape);
   }
-  for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
+  for (int i = 0; i < this->prefetch_.size(); ++i) {
     this->prefetch_[i].label_.Reshape(label_shape);
   }
 }
@@ -629,8 +629,6 @@ void ExtendedImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   const int lines_size = lines_.size();
 
   int epoch_size = (lines_size / batch_size);
-  this->cur_epoch_ = this->iter() / epoch_size;
-  int offset = this->iter() % epoch_size;
 
   if (this->cur_epoch_ != this->random_epoch_) {
     this->random_epoch_ = this->cur_epoch_;
@@ -640,10 +638,9 @@ void ExtendedImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     }
   }
 
-  this->extended_image_data_transformer_->cur_iter_ = this->iter();
   this->extended_image_data_transformer_->InitRand();
 
-  int lines_id_ = offset * batch_size;
+  int lines_id_ = 0;
 
   for (int item_id = 0; item_id < batch_size; ++item_id) {
     // get a blob
@@ -680,7 +677,6 @@ void ExtendedImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 
     top_label[item_id] = lines_[lines_id_].second;
 
-    // go to the next std::vector<int>::iterator iter;
     lines_id_++;
     /*
     if (lines_id_ >= lines_size) {
@@ -693,7 +689,6 @@ void ExtendedImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     }
     */
   }
-  this->iter_++;
   batch_timer.Stop();
   DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
   DLOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
