@@ -2,26 +2,17 @@ To install all layers, copy everything from ``src`` and ``include`` into the cor
 directories in your Caffe folder. Add ``caffe/add_to_caffe.proto`` into the end of ``src/caffe/proto/caffe.proto``
 and make sure to follow the instructions to add additional commented lines to ``LayerParameter``.
 
-The ``ExtendedImageDataLayer`` requires additional dependencies to be set up, such as matio and gason. This
-requires the following to lines to be added to your ``Makefile``::
-
-    LIBRARIES += matio maskApi gason boost_filesystem
-    CXXFLAGS += -std=c++11
-
-However, this layer is not essential for colorization training, so I would recommend taking it out and use
-standard built-in Caffe layers instead. It is also currently broken against Caffe master (PR are welcome to fix this!).
-
 Sparse hypercolumn extractor
 ============================
 
 If all you want to add is the sparse hypercolumn extractor, you only have to
-copy the ``spares_hypercolumn_extractor_layer.{hpp,cpp,cu}`` files. Add the
-following to ``LayerParameter``:
+copy the ``sparse_hypercolumn_extractor_layer.{hpp,cpp,cu}`` files. Add the
+following to the end of ``LayerParameter`` in ``src/caffe/proto/caffe.proto``::
 
     optional SparseHypercolumnExtractorParameter sparse_hypercolumn_extractor_param = 1234;
 
 Set ``1234`` to whatever you want that is not in conflict with another layer's
-parameters. Also add the following to the bottom ``caffe.proto``::
+parameters. Also add the following to the bottom ``src/caffe/proto/caffe.proto``::
 
     message SparseHypercolumnExtractorParameter {
       repeated float scale = 1;

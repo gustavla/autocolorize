@@ -14,8 +14,13 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#ifdef USE_MATIO
 #include <matio.h>
+#endif
+
+#ifdef USE_GASON
 #include <gason.h>
+#endif
 
 #include "caffe/data_transformer.hpp"
 #include "caffe/layers/extended_image_data_layer.hpp"
@@ -77,6 +82,11 @@ cv::Mat _load_mat(const string& filename, const string& key, int image_type,
     return cv_img;
   }
   else if (image_type == ExtendedImageDataParameter_ImageType_MAT) {
+#ifndef USE_GASON
+    assert(0 && "This requires compilation with USE_MATIO");
+    cv::Mat cv_img;
+    return cv_img;
+#else
     CHECK_EQ(new_height, 0) << "new_height not supported if image type is MAT";
     CHECK_EQ(new_width, 0) << "new_width not supported if image type is MAT";
     int img_row, img_col;
@@ -90,9 +100,9 @@ cv::Mat _load_mat(const string& filename, const string& key, int image_type,
     // Note that intuitively img_row should be index 0, but Matlab is column-major
     img_row = matvar->dims[0];
     img_col = matvar->dims[1];
+    cv::Mat cv_img = cv::Mat::zeros(img_row, img_col, CV_32F);
 
     // TODO: Should this be CV_64F if Dtype is double?
-    cv::Mat cv_img = cv::Mat::zeros(img_row, img_col, CV_32F);
     if (matvar->class_type == MAT_C_DOUBLE) {
       double* data = new double[img_row * img_col];
       int ret = Mat_VarReadDataLinear(matfp, matvar, data, 0, 1, img_row * img_col);
@@ -134,9 +144,14 @@ cv::Mat _load_mat(const string& filename, const string& key, int image_type,
         << "Field '" << key << "' is of unsupported type in MAT file " << filename;
     }
     Mat_Close(matfp);
+#endif
     return cv_img;
   }
   else if (image_type == ExtendedImageDataParameter_ImageType_COCO_JSON) {
+    cv::Mat cv_img;
+#ifndef USE_GASON
+    assert(0 && "This requires compilation with USE_GASON=1");
+#else
     CHECK_EQ(new_height, 0) << "new_height not supported if image type is COCO_JSON";
     CHECK_EQ(new_width, 0) << "new_width not supported if image type is COCO_JSON";
     int img_row, img_col;
@@ -196,9 +211,9 @@ cv::Mat _load_mat(const string& filename, const string& key, int image_type,
       }
     }
     delete[] M;
-    cv::Mat cv_img;
     cv::merge(cv_imgs, LABELS, cv_img);
     delete[] cv_imgs;
+#endif
     return cv_img;
   }
   else {
@@ -572,7 +587,7 @@ void ExtendedImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
   // data
   top_shape[0] = batch_size;
   for (int i = 0; i < this->prefetch_.size(); ++i) {
-    this->prefetch_[i].data_.Reshape(top_shape);
+    this->prefetch_[i]->data_.Reshape(top_shape);
   }
   top[0]->Reshape(top_shape);
 
@@ -584,7 +599,7 @@ void ExtendedImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
     top[1]->Reshape(label_shape);
   }
   for (int i = 0; i < this->prefetch_.size(); ++i) {
-    this->prefetch_[i].label_.Reshape(label_shape);
+    this->prefetch_[i]->label_.Reshape(label_shape);
   }
 }
 
